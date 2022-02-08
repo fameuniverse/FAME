@@ -1,2 +1,2 @@
-# FAME
-Fashion NFTs Platform Creating Hyper Connected Metaverse
+# xFAME
+World’s First NFT Boutique
