@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.12;
 
 interface ERC20 {
     event Transfer(address indexed from, address indexed to, uint256 value);

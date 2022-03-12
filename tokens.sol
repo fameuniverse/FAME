@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 // @errnubbr
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.12;
 
 import './standards/ERC20.sol';
 
-contract FAME is ERC20 {
+contract FAMEX is ERC20 {
     mapping(address => uint256) private balances;
     mapping(address => mapping(address => uint256)) private allowances;
     uint256 supply = 10**9 * 10**18;
@@ -16,10 +16,10 @@ contract FAME is ERC20 {
     }
 
     function name() external pure returns (string memory) {
-        return 'FAME Token';
+        return 'FAMEX Token';
     }
     function symbol() external pure returns (string memory) {
-        return 'FAME';
+        return 'FAMEX';
     }
     function decimals() external pure returns (uint8) {
         return 18;
