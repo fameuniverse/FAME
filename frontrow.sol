@@ -7,19 +7,20 @@ import "./standards/ERC1155.sol";
 import "./standards/FAME-Whitelist.sol";
 
 contract FAME_FRONTROW_2022 is FAME_WHITELIST {
-    address payable private constant FAME_UNIVERSE = payable(0x4a3E0107381252519ee681e58616810508656a14);
     address payable public factory;
     
-    uint256 private volume = 0;
-    uint256 private maxVolume;
+    string public constant name = "FAME FRONTROW 2022";
+    address public constant owner = 0x4a3E0107381252519ee681e58616810508656a14;
+    uint256 public volume = 0;
+    uint256 public maxVolume = 10_000;
     mapping(uint256 => address) private owners;
     mapping(uint256 => bytes32) private types;
     mapping(address => uint256) private totalBalances;
     mapping(address => mapping(address => bool)) private operatorApprovals;
-    string private baseURI;
+    string private baseURI = "https://xfame.app/metadata/frontrow-2022/";
     
     modifier onlyFAME() {
-        require(msg.sender == FAME_UNIVERSE, "FAME_FRONTROW_2022: caller is not approved");
+        require(msg.sender == owner, "FAME_FRONTROW_2022: caller is not approved");
         _;
     }
     modifier onlyFactory() {
@@ -29,12 +30,6 @@ contract FAME_FRONTROW_2022 is FAME_WHITELIST {
 
     constructor() {
         factory = payable(address(new FAME_FACTORY_FRONTROW_2022(this)));
-        maxVolume = 10_000;
-        baseURI = "https://xfame.app/metadata/frontrow-2022/";
-
-        _mintBatch(msg.sender, address(this), 1_000, '');
-        operatorApprovals[address(this)][msg.sender] = true;
-        emit ApprovalForAll(address(this), msg.sender, true);
     }
 
     function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
@@ -101,15 +96,6 @@ contract FAME_FRONTROW_2022 is FAME_WHITELIST {
         return operatorApprovals[_account][_operator];
     }
     
-    function name() external pure returns (string memory) {
-        return "FAME FRONTROW 2022";
-    }
-    function owner() external pure returns (address) {
-        return FAME_UNIVERSE;
-    }
-    function getVolume() external view returns (uint256) {
-        return volume;
-    }
     function ownerOf(uint256 _id) public view returns (address) {
         address tokenOwner = owners[_id];
         require(tokenOwner != address(0), "FAME_FRONTROW_2022: owner query for unregistered token");
@@ -148,6 +134,7 @@ contract FAME_FRONTROW_2022 is FAME_WHITELIST {
             setType(_ids[i], _types[i]);
         }
     }
+
     function mint(address _operator, address _to, uint256 _amount, bytes memory _data) external onlyFactory() {
         if (_amount == 1) {
             _mint(_operator, _to, _data);
@@ -185,13 +172,6 @@ contract FAME_FRONTROW_2022 is FAME_WHITELIST {
         emit TransferBatch(_operator, address(0), _to, ids, amounts);
 
         _doSafeBatchTransferAcceptanceCheck(_operator, address(0), _to, ids, amounts, _data);
-    }
-    function privateInvitations(address[] memory _to, uint256[] memory _ids) external onlyFAME {
-        require(_to.length == _ids.length, "FAME_FRONTROW_2022: receivers and ids length mismatch");
-
-        for (uint256 i = 0; i < _ids.length; i++) {
-            safeTransferFrom(address(this), _to[i], _ids[i], 1, '');
-        }
     }
 
     function _doSafeTransferAcceptanceCheck(address _operator, address _from, address _to, uint256 id, uint256 amount, bytes memory _data) private {
@@ -244,7 +224,7 @@ contract FAME_FACTORY_FRONTROW_2022 {
     address payable private constant FAME_UNIVERSE = payable(0x4a3E0107381252519ee681e58616810508656a14);
     FAME_FRONTROW_2022 private frontrow;
 
-    mapping(address => uint256) private whitelist;
+    mapping(address => uint256) public whitelist;
     mapping(address => uint256) private mintedAmounts;
     uint256 private constant MaxMintableAmount = 3;
 
@@ -254,11 +234,13 @@ contract FAME_FACTORY_FRONTROW_2022 {
         uint256 price;
         uint256 minWhitelistLevel;
     }
-    mapping(uint256 => Sale) private sales;
+    mapping(uint256 => Sale) public sales;
 
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
     uint256 private _status = 1;
+
+    event Mint(uint256 indexed _id, address indexed _operator);
 
     modifier nonReentrant() {
         require(_status != _ENTERED, "FAME_FACTORY_FRONTROW_2022: reentrant call");
@@ -273,49 +255,55 @@ contract FAME_FACTORY_FRONTROW_2022 {
 
     constructor(FAME_FRONTROW_2022 _frontrow) {
         frontrow = _frontrow;
-        // Private Sales 1
+
+        // Pre Sales
         sales[0] = Sale({
-            open: 1648731600, // Thursday, March 31, 2022 13:00:00 GMT
-            limit: 2_000, // #1000 ~ #1999
+            open: 1651150800, // April 28, 2022 13:00:00 GMT
+            limit: 400, // #0 ~ #399
             price: 0.08 ether,
             minWhitelistLevel: 1 // Whitelist only
         });
-        // Private Sales 2
         sales[1] = Sale({
-            open: 1649336400, // Thursday, April 7, 2022 13:00:00 GMT
-            limit: 5_000, // #2000 ~ #4999
-            price: 0.1 ether,
-            minWhitelistLevel: 1 // Whitelist only
-        });
-        // Public Sales
-        sales[2] = Sale({
-            open: 1649340000, // Thursday, April 7, 2022 14:00:00 GMT
-            limit: 10_000, // #5000 ~ #9999
-            price: 0.15 ether,
+            open: 1651410000, // May 1, 2022 13:00:00 GMT
+            limit: 400, // #0 ~ #399
+            price: 0.08 ether,
             minWhitelistLevel: 0
         });
     }
 
-    function isWhitelist(address _account) external view returns (bool) {
-        return whitelist[_account] > 0;
-    }
     function mintableAmountOf(address _owner) public view returns (uint256) {
         return MaxMintableAmount - mintedAmounts[_owner];
     }
 
     function mint(uint256 _salesId, uint256 _amount) external payable nonReentrant {
         Sale memory sale = sales[_salesId];
+        uint256 volume = frontrow.volume();
         require(_amount > 0 && _amount <= mintableAmountOf(msg.sender), "FAME_FACTORY_FRONTROW_2022: invalid minting amount");
         require(msg.value == _amount * sale.price, "FAME_FACTORY_FRONTROW_2022: wrong value");
         require(block.timestamp >= sale.open, "FAME_FACTORY_FRONTROW_2022: market not open");
-        require(frontrow.getVolume() + _amount <= sale.limit, "FAME_FACTORY_FRONTROW_2022: market closed");
+        require(volume + _amount <= sale.limit, "FAME_FACTORY_FRONTROW_2022: market closed");
         require(whitelist[msg.sender] >= sale.minWhitelistLevel, "FAME_FACTORY_FRONTROW_2022: only available for whitelist members");
 
         frontrow.mint(msg.sender, msg.sender, _amount, '');
         mintedAmounts[msg.sender] += _amount;
+        for (uint256 i = 0; i < _amount; i++) {
+            emit Mint(volume + i, msg.sender);
+        }
+    }
+    function privateInvitations(address[] memory _to) external onlyFAME {
+        for (uint256 i = 0; i < _to.length; i++) {
+            frontrow.mint(msg.sender, _to[i], 1, '');
+        }
     }
 
-
+    function addWhitelist(address _account) public onlyFAME {
+        whitelist[_account] = 1;
+    }
+    function addWhitelistBatch(address[] memory _accounts) external onlyFAME {
+        for(uint256 i = 0; i < _accounts.length; i++) {
+            addWhitelist(_accounts[i]);
+        }
+    }
     function setWhitelist(address _account, uint256 _value) public onlyFAME {
         whitelist[_account] = _value;
     }
@@ -331,5 +319,8 @@ contract FAME_FACTORY_FRONTROW_2022 {
             price: _price,
             minWhitelistLevel: _minWhitelistLevel
         });
+    }
+    function withdraw() external {
+        FAME_UNIVERSE.transfer(address(this).balance);
     }
 }
