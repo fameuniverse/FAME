@@ -30,6 +30,7 @@ contract FAME_FRONTROW_2022 is FAME_WHITELIST {
 
     constructor() {
         factory = payable(address(new FAME_FACTORY_FRONTROW_2022(this)));
+        _mint(msg.sender, owner, '');
     }
 
     function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
@@ -262,12 +263,6 @@ contract FAME_FACTORY_FRONTROW_2022 {
             limit: 400, // #0 ~ #399
             price: 0.08 ether,
             minWhitelistLevel: 1 // Whitelist only
-        });
-        sales[1] = Sale({
-            open: 1651410000, // May 1, 2022 13:00:00 GMT
-            limit: 400, // #0 ~ #399
-            price: 0.08 ether,
-            minWhitelistLevel: 0
         });
     }
 
